@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <iostream>
 #include "uEye.h"
+#include <vector>
 
 using std::cout;
 using std::endl;
+using std::vector;
 
 class uEyeCameraDriver
 {
@@ -22,7 +24,7 @@ public:
 	/**
 		uEye Camera Initialization
 	*/
-	virtual INT initUEyeCamera(INT cameraID);
+	virtual INT initUEyeCameras();
 
 	/**
 		Displaying Camera information
@@ -31,11 +33,13 @@ public:
 
 private:
 
-	HIDS mCameraHandle;
-	INT mCameraID;
+	vector<HIDS> *mCameraHandles;
+	vector<INT> *mDeviceIDs;
+	vector<INT> *mCameraIDs;
 
 	char* mCameraBuffer;
 	INT mCameraBufferID;
 
+	INT getDeviceAndCamerasIDs();
 
 };
