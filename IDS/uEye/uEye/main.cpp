@@ -9,7 +9,11 @@ using std::endl;
 
 int main(int argc, char* argv[])
 {
-	uEyeCameraDriver *uEyeCameraModel = new uEyeCameraDriver(1);
+	uEyeCameraDriver *uEyeCameraModel = new uEyeCameraDriver();
 	uEyeCameraModel->initUEyeCameras();
+	uEyeCameraModel->setAutoSensorGainShutter();
+	uEyeCameraModel->getImangeForamtParameters();
+	uEyeCameraModel->allocMemoryForFreezeCapture();
+	uEyeCameraModel->disableUEyeCameras();
 	return 0;
 }

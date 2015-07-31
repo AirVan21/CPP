@@ -14,7 +14,7 @@ public:
 	/**
 		Constructor
 	*/
-	uEyeCameraDriver(INT cameraID);
+	uEyeCameraDriver();
 	
 	/**
 		Destructor
@@ -31,14 +31,40 @@ public:
 	*/
 	void displayCameraInfo();
 
-private:
+	/**
+		Disabling Cameras
+	*/
+	virtual INT disableUEyeCameras();
+	
+	/**
+		Setting Auto Gain 
+	*/
+	virtual INT setAutoSensorGainShutter();
+	
+	/**
+		Gets Image Format parameters
+	*/
+	virtual INT getImangeForamtParameters();
 
+	/**
+		Memory allocation for FreezeVideo()
+	*/
+	virtual INT allocMemoryForFreezeCapture();
+
+private:
+	/**
+		XS Cameara Inforamtion
+	*/
 	vector<HIDS> *mCameraHandles;
 	vector<INT> *mDeviceIDs;
 	vector<INT> *mCameraIDs;
+	/**
+		Buffer Information for uEye Cameras
+	*/
+	vector<char*> *mCameraBuffers;
+	vector<INT> *mCameraBufferIDs;
 
-	char* mCameraBuffer;
-	INT mCameraBufferID;
+	IMAGE_FORMAT_INFO *mImageFormatInfo;
 
 	INT getDeviceAndCamerasIDs();
 
