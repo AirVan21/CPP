@@ -14,6 +14,9 @@ int main(int argc, char* argv[])
 	uEyeCameraModel->setAutoSensorGainShutter();
 	uEyeCameraModel->getImangeForamtParameters();
 	uEyeCameraModel->allocMemoryForFreezeCapture();
+	uEyeCameraModel->makeSnapshotInFreezeCapture();
+	uEyeCameraModel->storeSnapshots();
+	uEyeCameraModel->freeMemoryForFreezeCapture();
 	uEyeCameraModel->disableUEyeCameras();
 	return 0;
 }

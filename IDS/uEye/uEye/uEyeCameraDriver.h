@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <iostream>
 #include "uEye.h"
 #include <vector>
@@ -10,7 +11,9 @@ using std::vector;
 class uEyeCameraDriver
 {
 
-public: 
+public:
+	static const INT bitsPerPixel = 24;
+	
 	/**
 		Constructor
 	*/
@@ -50,6 +53,21 @@ public:
 		Memory allocation for FreezeVideo()
 	*/
 	virtual INT allocMemoryForFreezeCapture();
+	
+	/**
+		Free memory for FreezeVideo()
+	*/
+	virtual INT freeMemoryForFreezeCapture();
+	
+	/**
+		Makes snapshots and store in in RAM
+	*/
+	virtual INT makeSnapshotInFreezeCapture();
+	
+	/**
+		Store snapshots on disk
+	*/
+	virtual INT storeSnapshots();
 
 private:
 	/**

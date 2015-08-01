@@ -154,20 +154,92 @@ INT uEyeCameraDriver::allocMemoryForFreezeCapture()
 	INT resultCode = IS_SUCCESS;
 	char* pMem = NULL;
 	INT memID = 0;
-	for (vector<HIDS>::iterator hCam = mCameraHandles->begin(); hCam != mCameraHandles->end(); hCam)
+	// Size of Param for is_ImageFormat()
+	INT nSizeOfParam = 4;
+	for (vector<HIDS>::iterator hCam = mCameraHandles->begin(); hCam != mCameraHandles->end(); hCam++)
 	{
-		if ((resultCode = is_AllocImageMem(*hCam, mImageFormatInfo->nWidth, mImageFormatInfo->nWidth, 24, &pMem, &memID)) == IS_SUCCESS)
+		pMem = NULL;
+		memID = 0;
+		if ((resultCode = is_AllocImageMem(*hCam, mImageFormatInfo->nWidth, mImageFormatInfo->nHeight, bitsPerPixel, &pMem, &memID)) == IS_SUCCESS)
 		{
 			mCameraBuffers->push_back(pMem);
 			mCameraBufferIDs->push_back(memID);
+		} 
+		else
+		{
+			cout << "is_AllocImageMem() goes wrong in allocMemoryForFreezeCapture()" << endl;
 		}
 		resultCode = is_SetImageMem(*hCam, pMem, memID);
+		if (resultCode != IS_SUCCESS)
+		{
+			cout << "is_SetImageMem() goes wrong in allocMemoryForFreezeCapture()" << endl;
+		}
+		//Allocate image mem for current format, set format
+		resultCode = is_ImageFormat(*hCam, IMGFRMT_CMD_SET_FORMAT, &(mImageFormatInfo->nFormatID), nSizeOfParam);
+		if (resultCode != IS_SUCCESS)
+		{
+			cout << "is_ImageFormat() goes wrong in allocMemoryForFreezeCapture()" << endl;
+		}
 	}
-	//Allocate image mem for current format, set format
-	//resultCode = is_ImageFormat(hCam, IMGFRMT_CMD_SET_FORMAT, &formatInfo.nFormatID, 4);
+	
+	return resultCode;
+}
 
-	// Capture image
-	//resultCode = is_FreezeVideo(hCam, IS_WAIT);
+INT uEyeCameraDriver::freeMemoryForFreezeCapture()
+{
+	INT resultCode = IS_SUCCESS;
+	INT errorCode = IS_SUCCESS;
+	for (INT i = 0; i < mCameraHandles->size(); i++)
+	{
+		if ((errorCode = is_FreeImageMem(mCameraHandles->at(i), mCameraBuffers->at(i), mCameraBufferIDs->at(i))) != IS_SUCCESS)
+		{
+			resultCode = errorCode;
+			cout << "is_FreeImageMem() goes wrong in freeMemoryForFreezeCapture() for Camera = " << mCameraHandles->at(i) << endl;
+		}
+	}
+	return resultCode;
+}
+
+INT uEyeCameraDriver::makeSnapshotInFreezeCapture()
+{
+	INT resultCode = IS_SUCCESS;
+	INT errorCode = IS_SUCCESS; 
+	// Makes snapshot One by One
+	for (int i = 0; i < mCameraHandles->size(); i++)
+	{
+		if ((errorCode = is_FreezeVideo(mCameraHandles->at(i), IS_WAIT)) != IS_SUCCESS)
+		{
+			resultCode = errorCode;
+			cout << "is_FreezeVideo() goes wrong in makeSnapshotInFreezeCapture" << endl;
+		}
+	}
+	cout << "Captured (all " << mCameraHandles->size()  << " cameras!)" << endl;
+	return resultCode;
+}
+
+INT uEyeCameraDriver::storeSnapshots()
+{
+	INT resultCode = IS_SUCCESS;
+	INT errorCode = IS_SUCCESS;
+
+	IMAGE_FILE_PARAMS ImageFileParams;
+	ImageFileParams.nFileType = IS_IMG_PNG;
+	ImageFileParams.pnImageID = NULL;
+	ImageFileParams.ppcImageMem = NULL;
+	ImageFileParams.nQuality = 100;
+	wchar_t imageName[20];
+	int const decimal = 10;
+	for (int i = 0; i < mCameraHandles->size(); i++)
+	{
+		swprintf_s(imageName, L"0%d.png", i + 1);
+		ImageFileParams.pwchFileName = imageName;
+		errorCode = is_ImageFile(mCameraHandles->at(i), IS_IMAGE_FILE_CMD_SAVE, (void*)&ImageFileParams, sizeof(ImageFileParams));
+		if (errorCode != IS_SUCCESS)
+		{
+			resultCode = errorCode;
+			cout << "is_ImageFile() goes wrong in makeSnapshotInFreezeCapture()" << endl;
+		}
+	}
 	return resultCode;
 }
 
