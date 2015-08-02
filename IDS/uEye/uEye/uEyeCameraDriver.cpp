@@ -12,8 +12,27 @@ uEyeCameraDriver::uEyeCameraDriver() :
 uEyeCameraDriver::~uEyeCameraDriver()
 {}
 
+INT uEyeCameraDriver::cameraPreparation()
+{
+	INT resultCode = IS_SUCCESS;
+	INT errorCode  = IS_SUCCESS;
+	if ((errorCode = uEyeCameraDriver::initUEyeCameras()) != IS_SUCCESS)
+	{
+		resultCode = errorCode;
+	}
+	if ((errorCode = uEyeCameraDriver::setAutoSensorGainShutter()) != IS_SUCCESS)
+	{
+		resultCode = errorCode;
+	}
+	uEyeCameraDriver::setAutoFocus();
+	uEyeCameraDriver::getImangeForamtParameters();
+	uEyeCameraDriver::allocMemoryForFreezeCapture();
+	return resultCode;
+}
+
 INT uEyeCameraDriver::initUEyeCameras()
 {
+	cout << "Initialization:" << endl;
 	INT resultCode = IS_SUCCESS;
 	if ((resultCode = uEyeCameraDriver::getDeviceAndCamerasIDs()) == IS_SUCCESS)
 	{
@@ -22,7 +41,7 @@ INT uEyeCameraDriver::initUEyeCameras()
 			HIDS cameraHandle = ((HIDS) *i) | IS_USE_DEVICE_ID;
 			if ((resultCode = is_InitCamera(&cameraHandle, NULL)) == IS_SUCCESS)
 			{
-				cout << "Init PASS for Device ID = " << *i << endl;
+				cout << "  Init PASS for Device ID = " << *i << endl;
 				mCameraHandles->push_back(cameraHandle);
 				// Sets DIM mode for handling images (not OpenGL, not DirectX)
 				if ((resultCode = is_SetDisplayMode(cameraHandle, IS_SET_DM_DIB)) != IS_SUCCESS)
@@ -100,6 +119,23 @@ INT uEyeCameraDriver::setAutoSensorGainShutter()
 		if ((errorCode = is_SetAutoParameter(*i, IS_SET_ENABLE_AUTO_SENSOR_GAIN_SHUTTER, &autoGainOn, &dblDummy)) != IS_SUCCESS)
 		{
 			cout << "Auto Sensor Gain wasn't set for Camera = " << *i << endl;
+			resultCode = errorCode;
+		}
+	}
+	return resultCode;
+}
+
+INT uEyeCameraDriver::setAutoFocus()
+{
+	INT resultCode = IS_SUCCESS;
+	UINT autoFocusOn = 1;
+	UINT nSizeOfParam = 4;
+	for (vector<HIDS>::iterator hCam = mCameraHandles->begin(); hCam != mCameraHandles->end(); hCam++)
+	{
+		INT errorCode = IS_SUCCESS;
+		if ((errorCode = is_Focus(*hCam, FOC_CMD_GET_AUTOFOCUS_ENABLE, &autoFocusOn, nSizeOfParam)) != IS_SUCCESS)
+		{
+			cout << "Auto Focus wasn't set for Camera = " << *hCam << endl;
 			resultCode = errorCode;
 		}
 	}
@@ -189,7 +225,7 @@ INT uEyeCameraDriver::freeMemoryForFreezeCapture()
 {
 	INT resultCode = IS_SUCCESS;
 	INT errorCode = IS_SUCCESS;
-	for (INT i = 0; i < mCameraHandles->size(); i++)
+	for (INT i = 0; i < mCameraBuffers->size(); i++)
 	{
 		if ((errorCode = is_FreeImageMem(mCameraHandles->at(i), mCameraBuffers->at(i), mCameraBufferIDs->at(i))) != IS_SUCCESS)
 		{
@@ -200,10 +236,11 @@ INT uEyeCameraDriver::freeMemoryForFreezeCapture()
 	return resultCode;
 }
 
-INT uEyeCameraDriver::makeSnapshotInFreezeCapture()
+INT uEyeCameraDriver::makeSnapshotInFreezeCaptureWait()
 {
 	INT resultCode = IS_SUCCESS;
-	INT errorCode = IS_SUCCESS; 
+	INT errorCode = IS_SUCCESS;
+	cout << "Capture ... " << endl;
 	// Makes snapshot One by One
 	for (int i = 0; i < mCameraHandles->size(); i++)
 	{
@@ -217,11 +254,42 @@ INT uEyeCameraDriver::makeSnapshotInFreezeCapture()
 	return resultCode;
 }
 
-INT uEyeCameraDriver::storeSnapshots()
+INT uEyeCameraDriver::makeSnapshotInFreezeCaptureNoWait()
 {
 	INT resultCode = IS_SUCCESS;
 	INT errorCode = IS_SUCCESS;
+	cout << "Capture ... " << endl;
+	vector<HANDLE> eventStorage(mCameraHandles->size(), CreateEvent(NULL, FALSE, FALSE, NULL));
+	for (int i = 0; i < mCameraHandles->size(); i++)
+	{
+		// Makes snapshot simultaneously for all cameras (except first)
+		is_InitEvent(mCameraHandles->at(i), eventStorage[i], IS_SET_EVENT_FRAME);
+		is_EnableEvent(mCameraHandles->at(i), IS_SET_EVENT_FRAME);
+		is_FreezeVideo(mCameraHandles->at(i), IS_DONT_WAIT);
+		// Wait 350ms timeout
+		if (WaitForSingleObject(eventStorage[i], 350) == WAIT_TIMEOUT)
+		{
+			cout << "Trigged on TIMEOUT" << endl;
+		}
+	}
+	
+	for (int i = 0; i < mCameraHandles->size(); i++)
+	{
+		// Makes snapshot simultaneously for all cameras (except first)
+		is_DisableEvent(mCameraHandles->at(i), IS_SET_EVENT_FRAME);
+		is_ExitEvent(mCameraHandles->at(i), IS_SET_EVENT_FRAME);
+		CloseHandle(eventStorage[i]);
+	}
 
+	cout << "Captured (all " << mCameraHandles->size() << " cameras!)" << endl;
+	return resultCode;
+}
+
+INT uEyeCameraDriver::storeSnapshots()
+{
+	cout << "Saving images ..." << endl;
+	INT resultCode = IS_SUCCESS;
+	INT errorCode = IS_SUCCESS;
 	IMAGE_FILE_PARAMS ImageFileParams;
 	ImageFileParams.nFileType = IS_IMG_PNG;
 	ImageFileParams.pnImageID = NULL;
@@ -238,6 +306,35 @@ INT uEyeCameraDriver::storeSnapshots()
 		{
 			resultCode = errorCode;
 			cout << "is_ImageFile() goes wrong in makeSnapshotInFreezeCapture()" << endl;
+		}
+	}
+	cout << "Saved!" << endl;
+	return resultCode;
+}
+
+INT uEyeCameraDriver::setToStandbyMode()
+{
+	INT resultCode = IS_SUCCESS;
+	INT errorCode = IS_SUCCESS;
+	for (vector<HIDS>::iterator hCam = mCameraHandles->begin(); hCam != mCameraHandles->end(); hCam++)
+	{
+		if ((errorCode = is_CameraStatus(*hCam, IS_STANDBY, true)) != IS_SUCCESS)
+		{
+			cout << "Problems with setting standby mode!" << endl;
+		}
+	}
+	return resultCode;
+}
+
+INT uEyeCameraDriver::setToFreeRunMode()
+{
+	INT resultCode = IS_SUCCESS;
+	INT errorCode = IS_SUCCESS;
+	for (vector<HIDS>::iterator hCam = mCameraHandles->begin(); hCam != mCameraHandles->end(); hCam++)
+	{
+		if ((errorCode = is_CameraStatus(*hCam, IS_STANDBY, false)) != IS_SUCCESS)
+		{
+			cout << "Problems with setting freerun mode!" << endl;
 		}
 	}
 	return resultCode;
