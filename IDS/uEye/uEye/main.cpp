@@ -39,5 +39,7 @@ int main(int argc, char* argv[])
 	// Free resourses
 	uEyeCameraModel->freeMemoryForFreezeCapture();
 	uEyeCameraModel->disableUEyeCameras();
+	delete uEyeCameraModel;
+
 	return 0;
 }
