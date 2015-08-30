@@ -182,6 +182,8 @@ INT uEyeCameraDriver::getImangeForamtParameters()
 	mImageFormatInfo = formatInfo;
 	// Free format list memory 
 	free(ptrToFormatTable);
+	delete formatInfo;
+
 	return resultCode;
 }
 
@@ -210,7 +212,11 @@ INT uEyeCameraDriver::allocMemoryForFreezeCapture()
 		{
 			cout << "is_SetImageMem() goes wrong in allocMemoryForFreezeCapture()" << endl;
 		}
+		
 		//Allocate image mem for current format, set format
+		cout << mImageFormatInfo->nFormatID << endl;
+		cout << mImageFormatInfo->nWidth << endl;
+		cout << mImageFormatInfo->nHeight << endl;
 		resultCode = is_ImageFormat(*hCam, IMGFRMT_CMD_SET_FORMAT, &(mImageFormatInfo->nFormatID), nSizeOfParam);
 		if (resultCode != IS_SUCCESS)
 		{
@@ -262,7 +268,7 @@ INT uEyeCameraDriver::makeSnapshotInFreezeCaptureNoWait()
 	vector<HANDLE> eventStorage(mCameraHandles->size(), CreateEvent(NULL, FALSE, FALSE, NULL));
 	for (int i = 0; i < mCameraHandles->size(); i++)
 	{
-		// Makes snapshot simultaneously for all cameras (except first)
+		// Makes snapshot simultaneously for all cameras 
 		is_InitEvent(mCameraHandles->at(i), eventStorage[i], IS_SET_EVENT_FRAME);
 		is_EnableEvent(mCameraHandles->at(i), IS_SET_EVENT_FRAME);
 		is_FreezeVideo(mCameraHandles->at(i), IS_DONT_WAIT);
@@ -275,13 +281,64 @@ INT uEyeCameraDriver::makeSnapshotInFreezeCaptureNoWait()
 	
 	for (int i = 0; i < mCameraHandles->size(); i++)
 	{
-		// Makes snapshot simultaneously for all cameras (except first)
 		is_DisableEvent(mCameraHandles->at(i), IS_SET_EVENT_FRAME);
 		is_ExitEvent(mCameraHandles->at(i), IS_SET_EVENT_FRAME);
 		CloseHandle(eventStorage[i]);
 	}
 
 	cout << "Captured (all " << mCameraHandles->size() << " cameras!)" << endl;
+	return resultCode;
+}
+
+INT uEyeCameraDriver::makeSnapshotInFreezeCaptureParallel()
+{
+	INT resultCode = IS_SUCCESS;
+	INT errorCode = IS_SUCCESS;
+	cout << "Capture ... " << endl;
+	HIDS lastCam = mCameraHandles->at(0);
+	for (int i = 0; i < mCameraHandles->size(); i++)
+	{
+		is_FreezeVideo(mCameraHandles->at(i), IS_DONT_WAIT);
+	}	
+	return resultCode;
+}
+INT uEyeCameraDriver::accessCapturedImages()
+{
+	INT resultCode = IS_SUCCESS;
+	ID_RANGE iterationRange;
+	unsigned int u32TransferCaps = IS_TRANSFER_DESTINATION_DEVICE_MEMORY;
+	/* Enable camera memory mode */
+	TRANSFER_TARGET transferTarget = IS_TRANSFER_DESTINATION_DEVICE_MEMORY;
+	INT nRet = is_Transfer(*mCameraHandles->begin(), TRANSFER_CMD_SET_IMAGE_DESTINATION,
+		(void*)&transferTarget, sizeof(transferTarget));
+	if (nRet != IS_SUCCESS)
+	{
+		cout << "TRANSFER_CMD_SET_IMAGE_DESTINATION goes wrong" << endl;
+	}
+	else
+	{
+		cout << u32TransferCaps << endl;
+	}
+
+	/*
+	for (vector<HIDS>::iterator hCam = mCameraHandles->begin(); hCam != mCameraHandles->end(); hCam++)
+	{
+		// Check if camera memory is supported 
+		UINT nCaps = 0;
+		INT nRet = is_Transfer(*hCam, TRANSFER_CMD_GET_IMAGE_DESTINATION_CAPABILITIES,
+			(void*)&nCaps, sizeof(nCaps));
+
+		if ((nRet == IS_SUCCESS) && ((nCaps & IS_TRANSFER_DESTINATION_DEVICE_MEMORY) != 0))
+		{
+			// Enable camera memory mode 
+			TRANSFER_TARGET transferTarget = IS_TRANSFER_DESTINATION_DEVICE_MEMORY;
+			nRet = is_Transfer(*hCam, TRANSFER_CMD_SET_IMAGE_DESTINATION, (void*)&transferTarget, sizeof(transferTarget));
+		}
+		else
+		{
+			cout << "Camera memory is NOT supported" << endl;
+		}
+	} */
 	return resultCode;
 }
 
@@ -379,3 +436,4 @@ INT uEyeCameraDriver::getDeviceAndCamerasIDs()
 
 	return resultCode;
 }
+

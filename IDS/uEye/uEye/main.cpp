@@ -7,6 +7,7 @@ using std::cout;
 using std::endl;
 using std::cin;
 
+
 int main(int argc, char* argv[])
 {
 	uEyeCameraDriver *uEyeCameraModel = new uEyeCameraDriver();
@@ -21,8 +22,9 @@ int main(int argc, char* argv[])
 		cout << "  Input = ";
 		cin >> inputParam;
 		if (inputParam == 'm')
-		{
-			uEyeCameraModel->makeSnapshotInFreezeCaptureNoWait();
+		{	
+			uEyeCameraModel->accessCapturedImages();
+			uEyeCameraModel->makeSnapshotInFreezeCaptureWait();
 		}
 		if (inputParam == 's')
 		{
@@ -33,6 +35,7 @@ int main(int argc, char* argv[])
 			break;
 		}
 	} while (inputParam != 'q');
+	
 	// Free resourses
 	uEyeCameraModel->freeMemoryForFreezeCapture();
 	uEyeCameraModel->disableUEyeCameras();

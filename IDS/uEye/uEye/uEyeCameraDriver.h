@@ -36,7 +36,7 @@ public:
 		4. Getting parameters for picture with highest resolution
 		5. Memory allocation for snapshots (for all connected cameras)
 	*/
-	virtual INT cameraPreparation();
+	INT cameraPreparation();
 
 	/**
 		Displaying information about connected uEye cameras
@@ -47,55 +47,65 @@ public:
 	/**
 		Disabling connected uEye cameras
 	*/
-	virtual INT disableUEyeCameras();
+	INT disableUEyeCameras();
 	
 	/**
 		Allocates memory for images with params in mImageFormatInfo
 		Allocation performs for every connected camera
 		Every image memory is activated
 	*/
-	virtual INT allocMemoryForFreezeCapture();
+	INT allocMemoryForFreezeCapture();
 
 	/**
 		Frees memory for all cameras which was allocated earlier
 	*/
-	virtual INT freeMemoryForFreezeCapture();
+	INT freeMemoryForFreezeCapture();
 	
 	/**
 		Makes snapshots and store in in RAM (one by one transfer with WAIT param)
 	*/
-	virtual INT makeSnapshotInFreezeCaptureWait();
+	INT makeSnapshotInFreezeCaptureWait();
 	
 	/**
 		Makes snapshots and store in in RAM (transfer with NO_WAIR param and event handling method)
 	*/
-	virtual INT makeSnapshotInFreezeCaptureNoWait();
+	INT makeSnapshotInFreezeCaptureNoWait();
 
 	/**
 		Store snapshots on disk using PNG format 
 		(for e.g. "01.png")
 	*/
-	virtual INT storeSnapshots();
+	INT storeSnapshots();
 
 	/**
 		Sets all connected uEye cameras to standby mode
 	*/
-	virtual INT setToStandbyMode();
+	INT setToStandbyMode();
 	
 	/**
 		Sets all connected uEye camera to FreeRun mode
 	*/
-	virtual INT setToFreeRunMode();
+	INT setToFreeRunMode();
 	
 	/**
 		Setting Auto Gain for all uEye cameras
 	*/
-	virtual INT setAutoSensorGainShutter();
+	INT setAutoSensorGainShutter();
 
 	/**
 		Enabling Auto Focus for all uEye cameras
 	*/
-	virtual INT setAutoFocus();
+	INT setAutoFocus();
+
+	/**
+		Make parallel snapshots
+	*/
+	INT makeSnapshotInFreezeCaptureParallel();
+	
+	/**
+		Access captured images in camera memory
+	*/
+	INT accessCapturedImages();
 
 private:
 	
