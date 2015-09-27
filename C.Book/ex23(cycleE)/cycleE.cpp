@@ -22,15 +22,13 @@ int main(int argc, char const *argv[])
     int aNode = 0;
     int bNode = 0;
 
-    vector< vector<int> > mGraph(nVerteces);
-    vector< pair<int, int> > mEdges;
+    // Init identity table
+    vector< vector<int> > mGraph(nVerteces, vector<int>(nVerteces));
+
     for (unsigned int i = 0; i < nEdges; ++i)
     {
         cin >> aNode;
         cin >> bNode;
-        mGraph[aNode - 1].push_back(bNode - 1);
-        mGraph[bNode - 1].push_back(aNode - 1);
-        mEdges.push_back(make_pair(aNode - 1, bNode -1));
     }
 
     for (unsigned int i = 0; i < nEdges; ++i)
@@ -41,7 +39,6 @@ int main(int argc, char const *argv[])
             return 0;
         }
     }
-    
     findEulerCycle();
 
     return 0;
