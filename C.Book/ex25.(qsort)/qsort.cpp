@@ -4,12 +4,10 @@
 
 using namespace std;
 
-int nEntries = 0;
-
 int partition(vector<int> &inputVector, int left, int right)
 {
     int index = left;
-    int seed  = inputVector[index];
+    int seed = inputVector[index];
 
     for (int i = left + 1; i <= right; i++)
     {
@@ -35,75 +33,63 @@ void qsort(vector<int> &inputVector, int leftEdge, int rightEdge)
     }
 }
 
-int pairPartition(vector< pair<int, int> > &inputVector, int left, int right);
-
-void qSortPair(vector< pair<int, int> > &inputVector, int left, int right)
+int findAnswerL(int dot, int index, vector<int> &edges)
 {
-    if (left < right)
-    {
-        int mid = pairPartition(inputVector, left, right);
-        qSortPair(inputVector, left, mid - 1);
-        qSortPair(inputVector, mid + 1, right);
-    }
-}
-
-int pairPartition(vector< pair<int, int> > &inputVector, int left, int right)
-{
-    int index = left;
-    int seed = inputVector[index].first;
-
-    for (int i = left + 1; i <= right; i++)
-    {
-        if (inputVector[i].first <= seed)
-        {
-            index++;
-            swap(inputVector[i], inputVector[index]);
-        }
-    }
-    swap(inputVector[index], inputVector[left]);
+    while (index < edges.size() && edges[index] <= dot)
+        index++;
     return index;
 }
 
-bool inSegment(int dot, pair<int, int> &segment)
+void leftBrackets(int dot, int left, int right, vector<int> &edges, int &answer)
 {
-    return (dot >= segment.first) && (dot <= segment.second); 
-}
-
-int wideSearch(int dot, int index, vector< pair<int, int> > segmentVector)
-{
-    int nAmount = 0;
-    int i = index - 1;
-    int j = index + 1;
-    while (i >= 0 && inSegment(dot, segmentVector[i]))
+    if (left <= right)
     {
-        nAmount++;
-        i--;
-    }
-    while (j < segmentVector.size() && inSegment(dot, segmentVector[j]))
-    {
-        nAmount++;
-        j++;
-    }
-    return nAmount;
-}
-
-void entriesInVector(int dot, vector< pair<int, int> > segmentVector, int left, int right)
-{
-    int mid = (left + right) / 2; 
-
-    if (inSegment(dot, segmentVector[mid]))
-    {
-        nEntries++;
-        nEntries += wideSearch(dot, mid, segmentVector);
-    } else {
-        if (dot < segmentVector[mid].first)
+        int mid = (left + right) / 2;
+        if (edges[mid] == dot)
         {
-            entriesInVector(dot, segmentVector, left, mid - 1);
+            answer = findAnswerL(dot, mid, edges);
         } 
-        else if (dot > segmentVector[mid].second) 
+        else
         {
-            entriesInVector(dot, segmentVector, mid + 1, right);
-        }  
+            if (edges[mid] > dot)
+            {
+                leftBrackets(dot, left, mid - 1, edges, answer);
+            }
+            else {
+                answer = mid + 1;
+                leftBrackets(dot, mid + 1, right, edges, answer);
+            }
+        }
+    }
+}
+
+int findAnswerR(int dot, int index, vector<int> &edges)
+{
+    while (index < edges.size() && edges[index] < dot)
+        index++;
+    return index;
+}
+
+void rightBrackets(int dot, int left, int right, vector<int> &edges, int &answer)
+{
+    if (left <= right)
+    {
+        int mid = (left + right) / 2;
+        if (edges[mid] == dot)
+        {
+            answer = findAnswerR(dot, left, edges);
+        }
+        else
+        {
+            if (edges[mid] > dot)
+            {
+                rightBrackets(dot, left, mid - 1, edges, answer);
+            }
+            else {
+                answer = mid + 1;
+                rightBrackets(dot, mid + 1, right, edges, answer);
+            }
+        }
     }
 }
 
@@ -111,13 +97,14 @@ int main(int argc, char const *argv[])
 {
     unsigned int segmentAmount = 0;
     unsigned int dotAmount = 0;
-    
+
     cin >> segmentAmount;
     cin >> dotAmount;
-    
-    vector< pair<int, int> > segmentStorage(segmentAmount);
+
     vector<int> dotStorage(dotAmount);
-    
+    vector<int> leftEdges(segmentAmount);
+    vector<int> rightEdges(segmentAmount);
+
     register int aEdge = 0;
     register int bEdge = 0;
 
@@ -125,7 +112,8 @@ int main(int argc, char const *argv[])
     {
         cin >> aEdge;
         cin >> bEdge;
-        segmentStorage[i] = make_pair(aEdge, bEdge);
+        leftEdges[i] = aEdge;
+        rightEdges[i] = bEdge;
     }
 
     for (unsigned int i = 0; i < dotAmount; ++i)
@@ -133,20 +121,23 @@ int main(int argc, char const *argv[])
         cin >> aEdge;
         dotStorage[i] = aEdge;
     }
-
-    qsort(dotStorage, 0, (dotStorage.size()-1));
-    qSortPair(segmentStorage, 0, segmentStorage.size() - 1);
-    entriesInVector(dotStorage[1], segmentStorage, 0, segmentStorage.size() - 1);
-    cout << nEntries << endl;
-        
-    /*
+    
+    qsort(leftEdges, 0, leftEdges.size() - 1);
+    qsort(rightEdges, 0, rightEdges.size() - 1);
+    
     for (vector<int>::iterator i = dotStorage.begin(); i != dotStorage.end(); i++)
     {
-        entriesInVector(*i, segmentStorage, 0, segmentStorage.size() - 1);
-        cout << nEntries << endl;
-        nEntries = 0;
+        int leftBracket = 0;
+        int rightBracket = 0;
+        leftBrackets(*i, 0, leftEdges.size() - 1, leftEdges, leftBracket);
+        rightBrackets(*i, 0, rightEdges.size() - 1, rightEdges, rightBracket);
+        if (leftBracket - rightBracket > 0) {
+            cout << leftBracket - rightBracket << " ";
+        }
+        else {
+            cout << 0 << " ";
+        }
     }
-    */
 
     return 0;
 }
