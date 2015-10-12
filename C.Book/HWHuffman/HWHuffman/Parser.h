@@ -2,7 +2,7 @@
 
 #include <string>
 
-const unsigned int KEY_AMOUNT = 6;
+const uint32_t KEY_AMOUNT = 6;
 
 enum task
 {
@@ -27,11 +27,10 @@ public:
 
 private:
 
-	unsigned int input_length_;
+	uint32_t     input_length_;
 	const char **input_params_;
-
-	task command_task_;
-	std::string input_filename_;
-	std::string output_filename_;
+	task         command_task_;
+	std::string  input_filename_;
+	std::string  output_filename_;
 };
 

@@ -3,5 +3,5 @@
 struct symbol
 {
 	unsigned char letter;
-	unsigned int frequnecy;
+	unsigned int  frequnecy;
 };

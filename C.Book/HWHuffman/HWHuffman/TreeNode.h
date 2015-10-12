@@ -12,9 +12,9 @@ struct tree_node
 class compare_tree_node
 {
 public:
-	inline bool operator()(const tree_node &tree_one, const tree_node &tree_two)
+	bool operator()(const tree_node &tree_one, const tree_node &tree_two)
 	{
-		return tree_one.character.frequnecy > tree_two.character.frequnecy;
+		return (tree_one.character.frequnecy > tree_two.character.frequnecy);
 	}
 };
 
